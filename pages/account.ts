@@ -1,47 +1,48 @@
 import { Page, expect } from '@playwright/test';
 
-export class Account {
+export class account {
   constructor(private page: Page) {}
+
+  //Get Balance
   async getBalance() {
-    const textBlock = this.page.locator('.center').first();
-
-    await textBlock.waitFor({ state: 'visible' });
-
-    const text = await textBlock.textContent();
-
+    const text = await this.page.locator('.center').first().textContent();
     const match = text?.match(/Balance\s*:\s*(\d+)/);
-
-    return match ? match[1] : null;
+    return match ? Number(match[1]) : 0;
   }
 
+  // Deposit
   async deposit(amount: string) {
-    await this.page.getByRole('button', { name: 'Deposit' }).first().click();
+    // Open Deposit tab
+    await this.page.getByRole('button', { name: 'Deposit' }).click();
 
-    const input = this.page.locator('input[ng-model="amount"]');
-    await input.waitFor();
+    // Target Deposit form
+    const depositForm = this.page.locator('form[ng-submit="deposit()"]');
 
-    await input.fill(amount);
+    await depositForm.locator('input[ng-model="amount"]').fill(amount);
+    await depositForm.locator('button[type="submit"]').click();
 
-    await this.page.locator('button[type="submit"]').click();
-
+    // Optional validation
     await expect(this.page.locator('.error')).toContainText('Successful');
   }
 
+  // Withdraw
+  async withdraw(amount: string) {
+    // Open Withdraw tab
+    await this.page.getByRole('button', { name: 'Withdrawl' }).click();
+
+    // Target correct Withdraw form
+    const withdrawForm = this.page.locator('form[ng-submit="withdrawl()"]');
+
+    await withdrawForm.locator('input[ng-model="amount"]').fill(amount);
+    await withdrawForm.locator('button[type="submit"]').click();
+  }
+
+  // Transactions
   async openTransactions() {
     await this.page.getByRole('button', { name: 'Transactions' }).click();
-
-    // Wait for table only
-    await this.page.locator('table').waitFor({ state: 'visible' });
   }
 
   async getTransactions() {
-    const rows = this.page.locator('table tbody tr');
-    const count = await rows.count();
-
-    if (count === 0) {
-      return [];
-    }
-
-    return await rows.allTextContents();
+    return await this.page.locator('table tbody tr').allTextContents();
   }
 }
